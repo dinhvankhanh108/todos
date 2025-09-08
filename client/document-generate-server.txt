@@ -1,0 +1,200 @@
+# Hướng dẫn cài đặt JSON Server cho Development
+
+## Giới thiệu
+JSON Server là công cụ tạo fake REST API từ file JSON một cách nhanh chóng và đơn giản. Rất phù hợp cho việc prototype và development frontend.
+
+## Bước 1: Cài đặt JSON Server
+
+### Cách 1: Cài đặt global (Khuyến nghị)
+```bash
+npm install -g json-server
+```
+
+### Cách 2: Cài đặt local trong project
+```bash
+npm install --save-dev json-server
+```
+
+## Bước 2: Tạo file database (db.json)
+Tạo file `db.json` trong thư mục gốc của project:
+
+```json
+{
+  "todos": [
+    {
+      "id": 1,
+      "title": "Learn React",
+      "completed": false,
+      "priority": "HIGH"
+    },
+    {
+      "id": 2,
+      "title": "Build Todo App", 
+      "completed": true,
+      "priority": "MEDIUM"
+    }
+  ],
+  "users": [
+    {
+      "id": 1,
+      "name": "John Doe",
+      "email": "john@example.com"
+    }
+  ]
+}
+```
+
+## Bước 3: Chạy JSON Server
+
+### Các lệnh cơ bản
+```bash
+# Chạy với port mặc định (3000)
+json-server --watch db.json
+
+# Chạy với port tùy chỉnh
+json-server --watch db.json --port 3001
+
+# Với CORS và delay để mô phỏng mạng chậm
+json-server --watch db.json --port 3001 --delay 1000
+```
+
+### Thêm script vào package.json
+```json
+{
+  "scripts": {
+    "server": "json-server --watch db.json --port 3001",
+    "dev:server": "json-server --watch db.json --port 3001",
+    "dev:full": "concurrently \"npm run server\" \"npm run dev\""
+  }
+}
+```
+
+Sau đó chạy bằng:
+```bash
+npm run server
+```
+
+## Bước 4: Sử dụng API
+
+### API Endpoints tự động được tạo
+- `GET /todos` - Lấy tất cả todos
+- `GET /todos/1` - Lấy todo có id=1
+- `POST /todos` - Tạo todo mới (ID tự động tạo)
+- `PUT /todos/1` - Cập nhật toàn bộ todo có id=1
+- `PATCH /todos/1` - Cập nhật một phần todo có id=1
+- `DELETE /todos/1` - Xóa todo có id=1
+
+### Ví dụ sử dụng trong React
+```javascript
+// Cấu hình API base URL
+const API_BASE_URL = 'http://localhost:3001';
+
+// GET - Lấy tất cả todos
+fetch(`${API_BASE_URL}/todos`)
+  .then(res => res.json())
+  .then(data => console.log(data));
+
+// POST - Tạo todo mới
+fetch(`${API_BASE_URL}/todos`, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    title: 'New Todo',
+    completed: false,
+    priority: 'LOW'
+  })
+})
+.then(res => res.json())
+.then(data => console.log(data)); // ID sẽ tự động được tạo (3, 4, 5...)
+```
+
+## Bước 5: Tính năng nâng cao
+
+### Filtering & Pagination
+```bash
+# Filter theo trường
+GET /todos?completed=true
+GET /todos?priority=HIGH
+
+# Pagination
+GET /todos?_page=1&_limit=10
+
+# Sort
+GET /todos?_sort=title&_order=asc
+GET /todos?_sort=title&_order=desc
+
+# Search full-text
+GET /todos?q=react
+
+# Kết hợp nhiều filters
+GET /todos?completed=false&priority=HIGH&_sort=title
+```
+
+### Custom Routes (Tùy chọn)
+Tạo file `routes.json`:
+```json
+{
+  "/api/*": "/$1",
+  "/todos/:id/comments": "/comments?todoId=:id"
+}
+```
+
+Chạy với custom routes:
+```bash
+json-server --watch db.json --routes routes.json --port 3001
+```
+
+## Bước 6: Troubleshooting
+
+### Lỗi CORS
+Nếu gặp lỗi CORS, thêm middleware:
+
+Tạo file `cors-middleware.js`:
+```javascript
+module.exports = (req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,PATCH,OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  if (req.method === 'OPTIONS') {
+    res.sendStatus(200);
+  } else {
+    next();
+  }
+};
+```
+
+Chạy với middleware:
+```bash
+json-server --watch db.json --middlewares cors-middleware.js --port 3001
+```
+
+### Kiểm tra port đang sử dụng
+```bash
+# Windows
+netstat -ano | findstr :3001
+taskkill /PID <process_id> /F
+
+# Mac/Linux  
+lsof -ti:3001
+kill -9 <process_id>
+```
+
+## Bước 7: Environment Variables
+Tạo file `.env`:
+```
+REACT_APP_API_URL=http://localhost:3001
+```
+
+Sử dụng trong code:
+```javascript
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://api.production.com';
+```
+
+---
+
+## Tóm tắt
+1. **Cài đặt**: `npm install -g json-server`
+2. **Tạo db.json**: Định nghĩa cấu trúc dữ liệu
+3. **Chạy**: `json-server --watch db.json --port 3001`
+4. **Sử dụng**: API tự động có sẵn với full CRUD operations
+5. **Lợi ích**: ID tự động tạo unique, không bị ghi đè như JSONPlaceholder

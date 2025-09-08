@@ -1,0 +1,45 @@
+name: CI/CD react
+
+on:
+  pull_request:
+    branches:
+      - develop
+  push: 
+    branches: 
+      - main
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [21.x]
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+        cache-dependency-path: './client/package-lock.json'
+
+    - name: Cache node modules
+      id: cache
+      uses: actions/cache@v3
+      with:
+        path: ./client/node_modules
+        key: ${{ runner.os }}-node-${{ hashFiles('**/package.json', '**/package-lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-node-
+
+    - name: Install dependencies
+      run: npm install --legacy-peer-deps
+      working-directory: ./client
+      if: steps.cache.outputs.cache-hit != 'true'
+
+    - name: Build the app
+      run: npm run build
+      working-directory: ./client
+      continue-on-error: true
