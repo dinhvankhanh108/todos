@@ -21,11 +21,11 @@ export default [
       'react-refresh': reactRefresh
     },
     rules: {
-      // 'comma-dangle': ['error', 'never'],
-      // 'indent': ['error', 2],
-      // 'semi': ['error', 'never'],
-      // 'no-unused-vars': 'off',
-      // 'quotes': ['error', 'single']
+      'comma-dangle': ['error', 'never'],
+      'indent': ['error', 2],
+      'semi': ['error', 'never'],
+      'no-unused-vars': 'off',
+      'quotes': ['error', 'single']
     }
   }
 ]
