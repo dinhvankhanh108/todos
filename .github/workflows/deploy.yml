@@ -42,4 +42,3 @@ jobs:
     - name: Build the app
       run: npm run build
       working-directory: ./client
-      continue-on-error: true
